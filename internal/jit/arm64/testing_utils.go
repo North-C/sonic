@@ -30,8 +30,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/bytedance/sonic/internal/encoder"
-	"github.com/bytedance/sonic/internal/decoder"
+	"github.com/bytedance/sonic"
 )
 
 // TestHarness provides comprehensive testing utilities for ARM64 JIT
@@ -334,7 +333,7 @@ func (th *TestHarness) RunBenchmarkTests(testData []TestData) {
 			t.Run(data.Name+"_Encode", func(t *testing.T) {
 				t.ResetTimer()
 				for i := 0; i < 1000; i++ {
-					_, err := encoder.Encode(data.Value)
+					_, err := sonic.Encode(data.Value)
 					if err != nil {
 						t.Fatalf("Encode error: %v", err)
 					}
@@ -343,7 +342,7 @@ func (th *TestHarness) RunBenchmarkTests(testData []TestData) {
 
 			t.Run(data.Name+"_Decode", func(t *testing.T) {
 				jsonData := []byte(data.Expected)
-				dec := decoder.NewDecoder(jsonData)
+				dec := sonic.NewDecoder(jsonData)
 
 				t.ResetTimer()
 				for i := 0; i < 1000; i++ {
@@ -424,7 +423,7 @@ func (th *TestHarness) testEncodeDecode(data TestData) {
 	}
 
 	// Test decoding
-	dec := decoder.NewDecoder(encoded)
+	dec := sonic.NewDecoder(encoded)
 	result := th.createValueForType(reflect.TypeOf(data.Value))
 	n, err := dec.Decode(result)
 	if err != nil {
@@ -456,7 +455,7 @@ func (th *TestHarness) testMemoryUsage(data TestData) {
 			th.t.Fatalf("Encode error: %v", err)
 		}
 
-		dec := decoder.NewDecoder(encoded)
+		dec := sonic.NewDecoder(encoded)
 		result := th.createValueForType(reflect.TypeOf(data.Value))
 		_, err = dec.Decode(result)
 		if err != nil {
@@ -499,7 +498,7 @@ func (th *TestHarness) testConcurrentEncodeDecode(data TestData) {
 				}
 
 				// Decode
-				dec := decoder.NewDecoder(encoded)
+				dec := sonic.NewDecoder(encoded)
 				result := th.createValueForType(reflect.TypeOf(data.Value))
 				_, err = dec.Decode(result)
 				if err != nil {
@@ -551,7 +550,7 @@ func (th *TestHarness) validateAgainstStdLib(data TestData) {
 	}
 
 	// Sonic decoding
-	dec := decoder.NewDecoder(sonicJSON)
+	dec := sonic.NewDecoder(sonicJSON)
 	sonicResult := th.createValueForType(reflect.TypeOf(data.Value))
 	_, err = dec.Decode(sonicResult)
 	if err != nil {
@@ -576,7 +575,7 @@ func (th *TestHarness) stressTest(data TestData) {
 			break
 		}
 
-		dec := decoder.NewDecoder(encoded)
+		dec := sonic.NewDecoder(encoded)
 		result := th.createValueForType(reflect.TypeOf(data.Value))
 		_, err = dec.Decode(result)
 		if err != nil {

@@ -29,8 +29,6 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
-	"github.com/bytedance/sonic/internal/encoder"
-	"github.com/bytedance/sonic/internal/decoder"
 )
 
 // Integration tests for ARM64 JIT implementation
@@ -566,7 +564,7 @@ func TestARM64JIT_Integration_APICompatibility(t *testing.T) {
 		Age  int    `json:"age"`
 	}
 
-	err := encoder.Pretouch(reflect.TypeOf(TestStruct{}))
+	err := sonic.Pretouch(reflect.TypeOf(TestStruct{}))
 	if err != nil {
 		t.Fatalf("Pretouch error: %v", err)
 	}

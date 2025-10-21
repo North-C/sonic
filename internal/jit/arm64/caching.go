@@ -26,8 +26,6 @@ import (
 	"sync/atomic"
 	"time"
 	"unsafe"
-
-	"github.com/bytedance/sonic/internal/rt"
 )
 
 // JITCache provides intelligent caching for ARM64 JIT compilation

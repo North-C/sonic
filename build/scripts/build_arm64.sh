@@ -181,7 +181,10 @@ check_prerequisites() {
     fi
 
     GO_VERSION=$(go version | grep -o 'go[0-9]\+\.[0-9]\+' | sed 's/go//')
-    if [[ $(echo "$GO_VERSION < 1.20" | bc -l) -eq 1 ]] || [[ $(echo "$GO_VERSION >= 1.26" | bc -l) -eq 1 ]]; then
+    GO_MAJOR=$(echo $GO_VERSION | cut -d. -f1)
+    GO_MINOR=$(echo $GO_VERSION | cut -d. -f2)
+
+    if [[ $GO_MAJOR -lt 1 ]] || [[ $GO_MAJOR -eq 1 && $GO_MINOR -lt 20 ]] || [[ $GO_MAJOR -eq 1 && $GO_MINOR -gt 25 ]]; then
         log_error "Go version $GO_VERSION is not supported. Require Go 1.20-1.25"
         exit 1
     fi

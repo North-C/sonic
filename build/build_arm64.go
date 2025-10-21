@@ -27,7 +27,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go/build"
 	"log"
 	"os"
 	"os/exec"
@@ -494,9 +493,7 @@ func generateBuildManifest(config BuildConfig, outputDir string) error {
   "build_environment": {
     "go_version": "%s",
     "go_root": "%s",
-    "go_path": "%s",
-    "goroot": "%s",
-    "gopath": "%s"
+    "go_path": "%s"
   }
 }`,
 		config.OutputDir,
@@ -514,8 +511,6 @@ func generateBuildManifest(config BuildConfig, outputDir string) error {
 		runtime.Version(),
 		os.Getenv("GOROOT"),
 		os.Getenv("GOPATH"),
-		build.Default.GOROOT,
-		build.Default.GOPATH,
 	)
 
 	manifestFile := filepath.Join(outputDir, "build_manifest.json")

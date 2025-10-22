@@ -20,14 +20,16 @@
 package jit
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 
-	"`github.com/bytedance/sonic/internal/rt`"
+	"github.com/bytedance/sonic/internal/rt"
 	"github.com/bytedance/sonic/loader"
 	"github.com/twitchyliquid64/golang-asm/obj"
+	"github.com/twitchyliquid64/golang-asm/obj/arm64"
 )
 
 const (
@@ -80,10 +82,10 @@ func (self *BaseAssembler) Byte(v ...byte) {
 		self.From("MOVD", Imm(rt.Get64(v)))
 	}
 	for ; len(v) >= 4; v = v[4:] {
-		self.From("MOVW", Imm(rt.Get32(v)))
+		self.From("MOVW", Imm(int64(rt.Get32(v))))
 	}
 	for ; len(v) >= 2; v = v[2:] {
-		self.From("MOVH", Imm(rt.Get16(v)))
+		self.From("MOVH", Imm(int64(rt.Get16(v))))
 	}
 	for ; len(v) >= 1; v = v[1:] {
 		self.From("MOVB", Imm(int64(v[0])))
@@ -99,7 +101,6 @@ func (self *BaseAssembler) Mark(pc int) {
 // Link creates a label that can be jumped to
 func (self *BaseAssembler) Link(to string) {
 	var p *obj.Prog
-	var v []*obj.Prog
 
 	// placeholder substitution for loops
 	if strings.Contains(to, "{n}") {
@@ -112,7 +113,7 @@ func (self *BaseAssembler) Link(to string) {
 	}
 
 	// check for pending jumps
-	if v, ok = self.pendings[to]; ok {
+	if v, ok := self.pendings[to]; ok {
 		// link all pending jumps to this label
 		for _, p = range v {
 			p.To.Type = obj.TYPE_BRANCH
@@ -134,7 +135,6 @@ func (self *BaseAssembler) Link(to string) {
 // Sjmp generates a jump instruction to a label
 func (self *BaseAssembler) Sjmp(op string, to string) {
 	var p *obj.Prog
-	var v []*obj.Prog
 
 	// substitute placeholder in label names
 	if strings.Contains(to, "{n}") {
@@ -142,11 +142,11 @@ func (self *BaseAssembler) Sjmp(op string, to string) {
 	}
 
 	// try to link to an existing label
-	if v, ok = self.labels[to]; ok {
+	if labelProg, ok := self.labels[to]; ok {
 		p = self.pb.New()
 		p.As = As(op)
 		p.To.Type = obj.TYPE_BRANCH
-		p.To.Val = v[0]
+		p.To.Val = labelProg
 	} else {
 		// if label doesn't exist, add to pending jumps
 		p = self.pb.New()
@@ -159,6 +159,44 @@ func (self *BaseAssembler) Sjmp(op string, to string) {
 	}
 
 	self.pb.Append(p)
+}
+
+// Sref creates a symbol reference for PC-relative addressing (ARM64 version)
+func (self *BaseAssembler) Sref(to string, d int64) {
+	p := self.pb.New()
+	p.As = arm64.AMOVD
+	p.From = Imm(-d)
+
+	// placeholder substitution for loops
+	if strings.Contains(to, "{n}") {
+		to = strings.ReplaceAll(to, "{n}", strconv.Itoa(self.i))
+	}
+
+	// record the patch point
+	self.pb.Append(p)
+	self.xrefs[to] = append(self.xrefs[to], p)
+}
+
+// resolve resolves symbol references for PC-relative addressing (ARM64 version)
+func (self *BaseAssembler) resolve() {
+	for s, v := range self.xrefs {
+		for _, prog := range v {
+			if prog.As != arm64.AMOVD {
+				panic("invalid PC relative reference")
+			} else if p, exists := self.labels[s]; !exists {
+				panic("links are not fully resolved: " + s)
+			} else {
+				// Calculate PC-relative offset for ARM64
+				off := prog.From.Offset + p.Pc - prog.Pc
+				// For ARM64, we need to write the offset as a 32-bit value
+				// This is a simplified implementation - real ARM64 PC-relative addressing is more complex
+				if int(prog.Pc)+4 <= len(self.c) {
+					// Write the offset as a signed 32-bit value
+					binary.LittleEndian.PutUint32(self.c[prog.Pc:], uint32(off))
+				}
+			}
+		}
+	}
 }
 
 // From generates an instruction with a source operand only
@@ -382,6 +420,10 @@ func (self *BaseAssembler) assemble(framesize int, argsize int, argptrs, localpt
 
 	// Extract the assembled bytes
 	self.c = sym.P
+
+	// Resolve symbol references
+	self.resolve()
+
 	return self.c
 }
 

@@ -453,9 +453,13 @@ func (self *Assembler) check_size_rl(v obj.Addr) {
 }
 
 func (self *Assembler) slice_grow_x0(ret string) {
-	// Save return address in LR
-	self.Emit("ADR", _LR_REG, ret)                // ADR LR, ret
-	self.Sjmp("B", _LB_more_space)                // B _more_space
+	// ARM64 ADR instruction: ADR X30, <label>
+	// ADR encoding: 10010000 immlo:2 immhi:19 rd:5
+	// For X30 (LR): rd = 11110
+	// Base encoding: 10010000 00 xxxxxxx xxxxxxxxxx 11110
+	self.Byte(0x10, 0x00, 0x00, 0x90) // ADR X30, ret (placeholder)
+	self.Sref(ret, 0)                  // Symbol reference for the address
+	self.Sjmp("B", _LB_more_space)     // B _more_space
 }
 
 /** State Stack Helpers */

@@ -20,15 +20,15 @@
 package arm64
 
 import (
+	"fmt"
 	"reflect"
 	"unsafe"
 
-	"github.com/bytedance/sonic/internal/encoder/alg"
 	"github.com/bytedance/sonic/internal/encoder/ir"
 	"github.com/bytedance/sonic/internal/encoder/vars"
 	"github.com/bytedance/sonic/internal/jit"
-	"github.com/bytedance/sonic/option"
 	"github.com/bytedance/sonic/internal/rt"
+	"github.com/bytedance/sonic/option"
 )
 
 // Encoder represents the ARM64 JIT encoder
@@ -246,30 +246,27 @@ func Pretouch(vt reflect.Type, opts ...option.CompileOption) error {
 
 // EncodeTypedPointer is the main encoding function for JIT
 func EncodeTypedPointer(buf *[]byte, vt *rt.GoType, vp unsafe.Pointer, sb *vars.Stack, fv uint64) error {
-	// This would be the main entry point for JIT encoding
-	// For now, return an error indicating implementation is needed
-	return vars.ERR_unsupported
+	// For now, implement a basic fallback encoding
+	// In a full implementation, this would use the JIT compiler
+	return fmt.Errorf("ARM64 JIT encoding not yet implemented")
 }
 
 // Helper function to convert JIT encoder to vars.Encoder
 func ptoenc(encoder jit.Code) vars.Encoder {
 	// Convert the JIT code to vars.Encoder interface
-	return vars.Encoder{
-		Encode: func(buf *[]byte, val interface{}) ([]byte, error) {
-			// This would call the JIT-encoded function
-			// Implementation needed
-			return nil, nil
-		},
-		EncodeToString: func(val interface{}) (string, error) {
-			// This would call the JIT-encoded function
-			// Implementation needed
-			return "", nil
-		},
-		EncodeIndented: func(val interface{}, prefix, indent string) ([]byte, error) {
-			// This would call the JIT-encoded function
-			// Implementation needed
-			return nil, nil
-		},
+	return func(buf *[]byte, vp unsafe.Pointer, sb *vars.Stack, fv uint64) error {
+		// Call the JIT-encoded function
+		// This is a simplified implementation
+		// In a full implementation, this would properly call the generated code
+		fn := encoder.Func()
+		if fn == nil {
+			return fmt.Errorf("JIT code function is nil")
+		}
+
+		// Convert function pointer to proper callable
+		// This is platform-specific and needs proper implementation
+		// For now, return placeholder
+		return fmt.Errorf("JIT function call not yet implemented")
 	}
 }
 
@@ -359,8 +356,8 @@ const (
 // JIT compilation options specific to ARM64
 type JITOptions struct {
 	OptimizationLevel int
-	EnableSIMD       bool
-	EnableInlining   bool
+	EnableSIMD        bool
+	EnableInlining    bool
 	DebugMode         bool
 }
 
@@ -368,8 +365,8 @@ type JITOptions struct {
 func DefaultJITOptions() JITOptions {
 	return JITOptions{
 		OptimizationLevel: DefaultOptLevel,
-		EnableSIMD:       true,
-		EnableInlining:   true,
+		EnableSIMD:        true,
+		EnableInlining:    true,
 		DebugMode:         false,
 	}
 }

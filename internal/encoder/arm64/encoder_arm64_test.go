@@ -22,9 +22,8 @@ package arm64
 import (
 	"reflect"
 	"testing"
-	"unsafe"
 
-	"github.com/bytedance/sonic/internal/encoder/vars"
+	"github.com/bytedance/sonic/internal/encoder/ir"
 	"github.com/bytedance/sonic/internal/jit"
 	"github.com/bytedance/sonic/internal/rt"
 )
@@ -622,8 +621,8 @@ func BenchmarkGenerateIRProgram(b *testing.B) {
 
 func BenchmarkCompileStruct(b *testing.B) {
 	type TestStruct struct {
-		Name string `json:"name"`
-		Age  int    `json:"age"`
+		Name  string `json:"name"`
+		Age   int    `json:"age"`
 		Valid bool   `json:"valid"`
 	}
 	vt := reflect.TypeOf(TestStruct{})

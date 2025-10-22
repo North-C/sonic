@@ -356,3 +356,12 @@ func GetReturnRegister(n int) obj.Addr {
 	}
 	return Reg("R" + string(rune('0'+n)))
 }
+
+// As converts an instruction string to ARM64 opcode
+func As(op string) obj.As {
+	if ret, ok := _AC.Instructions[op]; ok {
+		return ret
+	} else {
+		panic("invalid ARM64 instruction: " + op)
+	}
+}

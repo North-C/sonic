@@ -21,13 +21,9 @@ package arm64
 
 import (
 	"testing"
-	"reflect"
-	"unsafe"
 
 	"github.com/bytedance/sonic/internal/encoder/ir"
-	"github.com/bytedance/sonic/internal/encoder/vars"
 	"github.com/bytedance/sonic/internal/jit"
-	"github.com/bytedance/sonic/internal/rt"
 )
 
 func TestARM64AssemblerCreation(t *testing.T) {
@@ -565,8 +561,8 @@ func TestARM64EncodingIntegration(t *testing.T) {
 
 	// Test a simple struct encoding scenario
 	type TestStruct struct {
-		Name string `json:"name"`
-		Age  int    `json:"age"`
+		Name  string `json:"name"`
+		Age   int    `json:"age"`
 		Valid bool   `json:"valid"`
 	}
 

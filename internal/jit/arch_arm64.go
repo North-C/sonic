@@ -24,7 +24,6 @@ import (
 
 	"github.com/twitchyliquid64/golang-asm/asm/arch"
 	"github.com/twitchyliquid64/golang-asm/obj"
-	"github.com/twitchyliquid64/golang-asm/obj/arm64"
 )
 
 var (
@@ -67,8 +66,8 @@ var (
 	R26 = Reg("R26")
 	R27 = Reg("R27")
 	R28 = Reg("R28")
-	FP = Reg("R29") // Frame Pointer
-	LR = Reg("R30") // Link Register
+	FP  = Reg("R29") // Frame Pointer
+	LR  = Reg("R30") // Link Register
 )
 
 // Zero register and Stack Pointer
@@ -178,10 +177,10 @@ func Ptr(reg obj.Addr, offs int64) obj.Addr {
 // OffsetReg creates a memory address with base register and index register offset
 func OffsetReg(base, index obj.Addr) obj.Addr {
 	return obj.Addr{
-		Reg:     base.Reg,
-		Index:   index.Reg,
-		Type:    obj.TYPE_MEM,
-		Offset:  0,
+		Reg:    base.Reg,
+		Index:  index.Reg,
+		Type:   obj.TYPE_MEM,
+		Offset: 0,
 	}
 }
 
@@ -214,24 +213,24 @@ func ExtReg(reg obj.Addr, extType uint8) obj.Addr {
 
 // ARM64 condition codes
 const (
-	COND_EQ = 0 // Equal
-	COND_NE = 1 // Not equal
-	COND_CS = 2 // Carry set (unsigned higher or same)
+	COND_EQ = 0       // Equal
+	COND_NE = 1       // Not equal
+	COND_CS = 2       // Carry set (unsigned higher or same)
 	COND_HS = COND_CS // Alias for CS
-	COND_CC = 3 // Carry clear (unsigned lower)
+	COND_CC = 3       // Carry clear (unsigned lower)
 	COND_LO = COND_CC // Alias for CC
-	COND_MI = 4 // Minus (negative)
-	COND_PL = 5 // Plus (positive or zero)
-	COND_VS = 6 // Overflow set
-	COND_VC = 7 // Overflow clear
-	COND_HI = 8 // Unsigned higher
-	COND_LS = 9 // Unsigned lower or same
-	COND_GE = 10 // Signed greater than or equal
-	COND_LT = 11 // Signed less than
-	COND_GT = 12 // Signed greater than
-	COND_LE = 13 // Signed less than or equal
-	COND_AL = 14 // Always (unconditional)
-	COND_NV = 15 // Never (unconditional)
+	COND_MI = 4       // Minus (negative)
+	COND_PL = 5       // Plus (positive or zero)
+	COND_VS = 6       // Overflow set
+	COND_VC = 7       // Overflow clear
+	COND_HI = 8       // Unsigned higher
+	COND_LS = 9       // Unsigned lower or same
+	COND_GE = 10      // Signed greater than or equal
+	COND_LT = 11      // Signed less than
+	COND_GT = 12      // Signed greater than
+	COND_LE = 13      // Signed less than or equal
+	COND_AL = 14      // Always (unconditional)
+	COND_NV = 15      // Never (unconditional)
 )
 
 // ARM64 memory access sizes
@@ -244,30 +243,30 @@ const (
 
 // ARM64 barrier types
 const (
-	BARRIER_SY = 0xF // Full system barrier
-	BARRIER_ST = 0xE // Store barrier
-	BARRIER_LD = 0xD // Load barrier
-	BARRIER_ISH = 0xB // Inner shareable barrier
+	BARRIER_SY    = 0xF // Full system barrier
+	BARRIER_ST    = 0xE // Store barrier
+	BARRIER_LD    = 0xD // Load barrier
+	BARRIER_ISH   = 0xB // Inner shareable barrier
 	BARRIER_ISHST = 0xA // Inner shareable store barrier
 	BARRIER_ISHLD = 0x9 // Inner shareable load barrier
-	BARRIER_NSH = 0x7 // Non-shareable barrier
+	BARRIER_NSH   = 0x7 // Non-shareable barrier
 	BARRIER_NSHST = 0x6 // Non-shareable store barrier
 	BARRIER_NSHLD = 0x5 // Non-shareable load barrier
-	BARRIER_OSH = 0x3 // Outer shareable barrier
+	BARRIER_OSH   = 0x3 // Outer shareable barrier
 	BARRIER_OSHST = 0x2 // Outer shareable store barrier
 	BARRIER_OSHLD = 0x1 // Outer shareable load barrier
 )
 
 // ARM64 system registers
 const (
-	SYSREG_DC_CIVAC = 0x390 // Data or unified cache line invalidate by VA to PoC
-	SYSREG_IC_IALLU = 0x250 // Invalidate all instruction caches Inner Shareable
+	SYSREG_DC_CIVAC       = 0x390 // Data or unified cache line invalidate by VA to PoC
+	SYSREG_IC_IALLU       = 0x250 // Invalidate all instruction caches Inner Shareable
 	SYSREG_TLBI_VMALLE1IS = 0x600 // Invalidate all stage-1 translations
 )
 
 // ARM64 processor state (PSTATE) fields
 const (
-	PSTATE_SP = 0x3  // Stack pointer selection
+	PSTATE_SP   = 0x3 // Stack pointer selection
 	PSTATE_DAIF = 0x7 // Disable exceptions
 	PSTATE_NZCV = 0xF // Condition flags
 )
@@ -364,4 +363,39 @@ func As(op string) obj.As {
 	} else {
 		panic("invalid ARM64 instruction: " + op)
 	}
+}
+
+// ARM64 JIT support functions
+var arm64JITEnabled = true
+
+// IsARM64JITEnabled returns true if ARM64 JIT compilation is enabled
+func IsARM64JITEnabled() bool {
+	return arm64JITEnabled
+}
+
+// EnableARM64JIT enables ARM64 JIT compilation
+func EnableARM64JIT() {
+	arm64JITEnabled = true
+}
+
+// DisableARM64JIT disables ARM64 JIT compilation
+func DisableARM64JIT() {
+	arm64JITEnabled = false
+}
+
+// Func creates a function address from a Go function pointer
+func Func(fn interface{}) obj.Addr {
+	return ImmPtr(unsafe.Pointer(&fn))
+}
+
+// Type creates a type address from a Go type
+func Type(t interface{}) obj.Addr {
+	return ImmPtr(unsafe.Pointer(&t))
+}
+
+// Itab creates an itab address for interface type checking
+func Itab(typ, iface interface{}) obj.Addr {
+	// This is a simplified implementation
+	// In a full implementation, this would create proper itab
+	return ImmPtr(unsafe.Pointer(&typ))
 }

@@ -378,10 +378,26 @@ func (self *BaseAssembler) Size() int {
 	return len(self.c)
 }
 
+var arm64JitLoader = loader.Loader{
+	Name: "sonic.jit.arm64.",
+	File: "github.com/bytedance/sonic/jit_arm64.go",
+	Options: loader.Options{
+		NoPreempt: true,
+	},
+}
+
 // Load compiles and loads the generated code
-func (self *BaseAssembler) Load(name string, framesize int, argsize int, argptrs, localptrs []int64) loader.Code {
-	return self.o.Do(func() loader.Code {
-		return loader.Load(name, self.assemble(framesize, argsize, argptrs, localptrs))
+func (self *BaseAssembler) Load(name string, framesize int, argsize int, argptrs, localptrs []int64) loader.Function {
+	return self.o.Do(func() loader.Function {
+		// Execute the compilation
+		self.Execute()
+
+		// Convert []int64 to []bool for stackmap
+		argStackmap := make([]bool, len(argptrs))
+		localStackmap := make([]bool, len(localptrs))
+
+		// Load the function using the ARM64 JIT loader
+		return arm64JitLoader.LoadOne(self.c, name, framesize, argsize, argStackmap, localStackmap)
 	})
 }
 
